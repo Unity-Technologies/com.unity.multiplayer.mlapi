@@ -14,7 +14,6 @@ namespace MLAPI
     {
         NetworkedVar<Vector3> m_varPos = new NetworkedVar<Vector3>();
         NetworkedVar<Quaternion> m_varRot = new NetworkedVar<Quaternion>();
-        float m_totalElapsed = 0.0f;
         const float k_updateRate = 0.1f;
         const float k_epsilon = 0.001f;
 
@@ -23,6 +22,7 @@ namespace MLAPI
         Quaternion[] m_RotStore = new Quaternion[2];
         float[] m_PosTimes = new float[2];
         float[] m_RotTimes = new float[2];
+        float m_lastSent = 0.0f;
 
         SyncTransform()
         {
@@ -40,7 +40,7 @@ namespace MLAPI
             if (!IsLocalPlayer)
             {
                 m_PosTimes[0] = m_PosTimes[1];
-                m_PosTimes[1] = m_totalElapsed;
+                m_PosTimes[1] = Time.fixedTime;
                 m_PosStore[0] = m_PosStore[1];
                 m_PosStore[1] = after;
 
@@ -54,7 +54,7 @@ namespace MLAPI
             if (!IsLocalPlayer)
             {
                 m_RotTimes[0] = m_RotTimes[1];
-                m_RotTimes[1] = m_totalElapsed;
+                m_RotTimes[1] = Time.fixedTime;
                 m_RotStore[0] = m_RotStore[1];
                 m_RotStore[1] = after;
 
@@ -68,17 +68,20 @@ namespace MLAPI
             m_varRot.Settings.WritePermission = NetworkedVarPermission.Everyone;
         }
 
-        void Update()
+        void FixedUpdate()
         {
-            float timeSinceLat = Time.deltaTime;
-            m_totalElapsed += timeSinceLat;
+            float now = Time.fixedTime;
+            if (m_lastSent == 0.0f)
+            {
+                m_lastSent = now;
+            }
 
             // if this.gameObject is local let's send its position
             if (IsLocalPlayer)
             {
-                while (m_totalElapsed > k_updateRate)
+                while ((now - m_lastSent) > k_updateRate)
                 {
-                    m_totalElapsed -= k_updateRate;
+                    m_lastSent += k_updateRate;
 
                     m_varPos.Value = gameObject.transform.position;
                     m_varRot.Value = gameObject.transform.rotation;
@@ -86,6 +89,8 @@ namespace MLAPI
             }
             else
             {
+                // todo: do we want to perform local interpolation on Update() instead?
+
                 // let's interpolate the last received transform
                 if (m_PosTimes[0] >= 0.0 && m_PosTimes[1] >= 0.0)
                 {
@@ -94,7 +99,7 @@ namespace MLAPI
                         gameObject.transform.position = Vector3.LerpUnclamped(
                             m_PosStore[0],
                             m_PosStore[1],
-                            (m_totalElapsed - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
+                            (now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
                     }
                 }
                 if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
@@ -104,7 +109,7 @@ namespace MLAPI
                         gameObject.transform.rotation = Quaternion.SlerpUnclamped(
                             m_RotStore[0],
                             m_RotStore[1],
-                            (m_totalElapsed - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
+                            (now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
                     }
                 }
             }
