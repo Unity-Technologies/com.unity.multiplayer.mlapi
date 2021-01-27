@@ -606,12 +606,19 @@ namespace MLAPI
             if (!varInit)
                 InitializeVars();
 
+            // this call must be deferred if the server is going to not send this frame
+            // or maybe not, this seems to just reset fields.
             PreNetworkVariableWrite();
             NetworkedVarUpdate(clientId);
         }
 
         private readonly List<int> networkedVarIndexesToReset = new List<int>();
         private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
+
+        private ushort GetTick()
+        {
+            return (ushort)(Time.time / 0.20);
+        }
 
         private void NetworkedVarUpdate(ulong clientId)
         {
@@ -626,6 +633,10 @@ namespace MLAPI
                     {
                         writer.WriteUInt64Packed(NetworkId);
                         writer.WriteUInt16Packed(NetworkedObject.GetOrderIndex(this));
+
+                        // Write the current tick frame
+                        // todo: ideally this would not be done per-variable, but only once per-frame
+                        writer.WriteUInt16Packed(GetTick());
 
                         bool writtenAny = false;
                         for (int k = 0; k < networkedVarFields.Count; k++)
@@ -716,6 +727,8 @@ namespace MLAPI
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
+                ushort srcTick = reader.ReadUInt16Packed();
+
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     ushort varSize = 0;
@@ -768,7 +781,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadDelta(stream, IsServer);
+                    networkedVarList[i].ReadDelta(stream, IsServer, srcTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -794,6 +807,8 @@ namespace MLAPI
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
+                ushort srcTick = reader.ReadUInt16Packed();
+
                 for (int i = 0; i < networkedVarList.Count; i++)
                 {
                     ushort varSize = 0;
@@ -835,7 +850,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream);
+                    networkedVarList[i].ReadField(stream, srcTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -906,7 +921,7 @@ namespace MLAPI
             }
         }
 
-        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream)
+        internal static void SetNetworkedVarData(List<INetworkedVar> networkedVarList, Stream stream, ushort srcTick)
         {
             if (networkedVarList.Count == 0)
                 return;
@@ -932,7 +947,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[j].ReadField(stream);
+                    networkedVarList[j].ReadField(stream, srcTick);
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {

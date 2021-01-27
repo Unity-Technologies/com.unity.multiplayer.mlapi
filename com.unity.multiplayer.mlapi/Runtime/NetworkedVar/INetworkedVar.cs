@@ -48,13 +48,13 @@ namespace MLAPI.NetworkedVar
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the state from</param>
-        void ReadField(Stream stream);
+        void ReadField(Stream stream, ushort srcTick);
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
         /// <param name="stream">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
-        void ReadDelta(Stream stream, bool keepDirtyDelta);
+        void ReadDelta(Stream stream, bool keepDirtyDelta, ushort srcTick);
         /// <summary>
         /// Sets NetworkedBehaviour the container belongs to.
         /// </summary>

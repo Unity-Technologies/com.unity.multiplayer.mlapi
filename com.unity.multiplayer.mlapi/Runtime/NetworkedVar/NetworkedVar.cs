@@ -167,7 +167,7 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort srcTick)
         {
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
@@ -188,9 +188,9 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream)
+        public void ReadField(Stream stream, ushort srcTick)
         {
-            ReadDelta(stream, false);
+            ReadDelta(stream, false, srcTick);
         }
 
         /// <inheritdoc />

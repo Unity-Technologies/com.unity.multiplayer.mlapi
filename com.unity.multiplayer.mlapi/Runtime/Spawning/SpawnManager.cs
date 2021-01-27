@@ -336,7 +336,8 @@ namespace MLAPI.Spawning
 
             if (readNetworkedVar && NetworkingManager.Singleton.NetworkConfig.EnableNetworkedVar)
             {
-                netObject.SetNetworkedVarData(dataStream);
+                // todo: revisit this, using 0 for tick when spawning object
+                netObject.SetNetworkedVarData(dataStream, 0);
             }
 
             if (SpawnedObjects.ContainsKey(netObject.NetworkId)) return;
