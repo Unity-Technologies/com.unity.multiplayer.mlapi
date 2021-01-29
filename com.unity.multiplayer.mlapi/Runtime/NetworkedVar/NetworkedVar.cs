@@ -14,6 +14,11 @@ namespace MLAPI.NetworkedVar
     public class NetworkedVar<T> : INetworkedVar
     {
         /// <summary>
+        /// The maximum number of network ticks a NetworkedVar can go without its value being sent out
+        /// </summary>
+        private ushort k_maxTickUpdate = 20;
+
+        /// <summary>
         /// Gets or sets Whether or not the variable needs to be delta synced
         /// </summary>
         public bool isDirty { get; set; }
@@ -22,9 +27,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         /// <summary>
-        /// Gets the last time the variable was synced
+        /// Gets the last time the variable was synced (send)
         /// </summary>
-        public float LastSyncedTime { get; internal set; }
+        public ushort SendTick { get; internal set; }
+        /// <summary>
+        /// Gets the tick at which a variable was written to on the remote machine
+        /// </summary>
+        public ushort SrcTick { get; internal set; }
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -101,18 +110,21 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public void ResetDirty()
         {
+            // since ResetDirty is called as part of PostNetworkVariableWrite
+            // this is actually the tick the variable were written
+            SendTick = NetworkedBehaviour.GetTick();
             isDirty = false;
-            LastSyncedTime = NetworkingManager.Singleton.NetworkTime;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
-            if (!isDirty) return false;
-            if (Settings.SendTickrate == 0) return true;
-            if (Settings.SendTickrate < 0) return false;
-            if (NetworkingManager.Singleton.NetworkTime - LastSyncedTime >= (1f / Settings.SendTickrate)) return true;
-            return false;
+            // todo: this subtraction must be done modulo the wrapping window
+            if ((NetworkedBehaviour.GetTick() - SendTick) > k_maxTickUpdate)
+            {
+                return true;
+            }
+            return isDirty;
         }
 
         /// <inheritdoc />
@@ -169,6 +181,7 @@ namespace MLAPI.NetworkedVar
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort srcTick)
         {
+            SrcTick = srcTick;
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 T previousValue = InternalValue;
@@ -190,6 +203,7 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort srcTick)
         {
+            SrcTick = srcTick;
             ReadDelta(stream, false, srcTick);
         }
 
