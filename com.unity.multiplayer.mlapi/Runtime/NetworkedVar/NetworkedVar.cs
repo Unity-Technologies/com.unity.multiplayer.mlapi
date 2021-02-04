@@ -2,6 +2,7 @@
 using UnityEngine;
 using System.IO;
 using System;
+using MLAPI.Logging;
 using MLAPI.Serialization.Pooled;
 using MLAPI.Transports;
 
@@ -32,6 +33,7 @@ namespace MLAPI.NetworkedVar
         public ushort SendTick { get; internal set; }
         /// <summary>
         /// Gets the tick at which a variable was written to on the remote machine
+        /// This only gets set when the host receives th client netVar
         /// </summary>
         public ushort SrcTick { get; internal set; }
         /// <summary>
@@ -46,12 +48,15 @@ namespace MLAPI.NetworkedVar
         public OnValueChangedDelegate OnValueChanged;
         private NetworkedBehaviour networkedBehaviour;
 
+        private static int allIdsForLogging = 0;
+        public int myIdForLogging = 0;
         /// <summary>
         /// Creates a NetworkedVar with the default value and settings
         /// </summary>
         public NetworkedVar()
         {
-
+            myIdForLogging = allIdsForLogging;
+            allIdsForLogging += 1;
         }
 
         /// <summary>
@@ -120,10 +125,10 @@ namespace MLAPI.NetworkedVar
         public bool IsDirty()
         {
             // todo: this subtraction must be done modulo the wrapping window
-            if ((NetworkedBehaviour.GetTick() - SendTick) > k_maxTickUpdate)
-            {
-                return true;
-            }
+            //if ((NetworkedBehaviour.GetTick() - SendTick) > k_maxTickUpdate)
+            //{
+                //return true;
+            //}
             return isDirty;
         }
 
@@ -188,6 +193,13 @@ namespace MLAPI.NetworkedVar
                 InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
 
                 if (keepDirtyDelta) isDirty = true;
+
+                string text = "Read var " + myIdForLogging + " is " + InternalValue + " srcTick " + SrcTick + " sendTick " + SendTick;
+                text = text.Replace('(', ' ');
+                text = text.Replace(')', ' ');
+                text = text.Replace(',', ' ');
+
+                FileLogger.Get().Log(text);
 
                 if (OnValueChanged != null)
                     OnValueChanged(previousValue, InternalValue);

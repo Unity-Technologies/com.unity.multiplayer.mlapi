@@ -60,5 +60,6 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkedBehaviour(NetworkedBehaviour behaviour);
+        public ushort SrcTick { get; }
     }
 }

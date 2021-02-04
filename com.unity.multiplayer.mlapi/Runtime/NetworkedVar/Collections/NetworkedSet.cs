@@ -506,6 +506,8 @@ namespace MLAPI.NetworkedVar.Collections
 
         /// <inheritdoc />
         public bool IsReadOnly => set.IsReadOnly;
+
+        public ushort SrcTick { get; }
     }
 
     /// <summary>

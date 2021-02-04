@@ -1,3 +1,4 @@
+using MLAPI.Logging;
 using MLAPI.NetworkedVar;
 using UnityEngine;
 
@@ -14,7 +15,7 @@ namespace MLAPI
     {
         NetworkedVar<Vector3> m_varPos = new NetworkedVar<Vector3>();
         NetworkedVar<Quaternion> m_varRot = new NetworkedVar<Quaternion>();
-        const float k_updateRate = 0.1f;
+//        const float k_updateRate = 0.1f;
         const float k_epsilon = 0.001f;
 
         // data structures for interpolation
@@ -37,10 +38,17 @@ namespace MLAPI
 
         void SyncPosChanged(Vector3 before, Vector3 after)
         {
+/*            string text = "Var " + m_varPos.myIdForLogging + " is " + after + " " + m_varPos.SrcTick + " " + m_varPos.SendTick;
+            text = text.Replace('(', ' ');
+            text = text.Replace(')', ' ');
+            text = text.Replace(',', ' ');
+
+            FileLogger.Get().Log(text);
+*/
             if (!IsLocalPlayer)
             {
                 m_PosTimes[0] = m_PosTimes[1];
-                m_PosTimes[1] = Time.fixedTime;
+                m_PosTimes[1] = Time.time;
                 m_PosStore[0] = m_PosStore[1];
                 m_PosStore[1] = after;
 
@@ -54,7 +62,7 @@ namespace MLAPI
             if (!IsLocalPlayer)
             {
                 m_RotTimes[0] = m_RotTimes[1];
-                m_RotTimes[1] = Time.fixedTime;
+                m_RotTimes[1] = Time.time;
                 m_RotStore[0] = m_RotStore[1];
                 m_RotStore[1] = after;
 
@@ -68,9 +76,9 @@ namespace MLAPI
             m_varRot.Settings.WritePermission = NetworkedVarPermission.Everyone;
         }
 
-        void FixedUpdate()
+        void Update()
         {
-            float now = Time.fixedTime;
+            float now = Time.time;
             if (m_lastSent == 0.0f)
             {
                 m_lastSent = now;
@@ -79,17 +87,20 @@ namespace MLAPI
             // if this.gameObject is local let's send its position
             if (IsLocalPlayer)
             {
-                while ((now - m_lastSent) > k_updateRate)
-                {
-                    m_lastSent += k_updateRate;
+//                while ((now - m_lastSent) > k_updateRate)
+//                {
+//                    m_lastSent += k_updateRate;
 
                     m_varPos.Value = gameObject.transform.position;
                     m_varRot.Value = gameObject.transform.rotation;
-                }
+//                }
             }
             else
             {
                 // todo: do we want to perform local interpolation on Update() instead?
+
+                gameObject.transform.position = m_PosStore[1];
+                gameObject.transform.rotation = m_RotStore[1];
 
                 // let's interpolate the last received transform
                 if (m_PosTimes[0] >= 0.0 && m_PosTimes[1] >= 0.0)
