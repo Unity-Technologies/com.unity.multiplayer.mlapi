@@ -797,7 +797,7 @@ namespace MLAPI
                     ushort srcTick = reader.ReadUInt16Packed();
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadDelta(stream, IsServer, srcTick);
+                    networkedVarList[i].ReadDelta(stream, IsServer, sndTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
