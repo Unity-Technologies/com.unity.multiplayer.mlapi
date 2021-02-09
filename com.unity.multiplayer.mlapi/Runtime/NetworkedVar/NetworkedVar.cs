@@ -14,6 +14,8 @@ namespace MLAPI.NetworkedVar
     [Serializable]
     public class NetworkedVar<T> : INetworkedVar
     {
+        static int Ids = 0;
+        private int myId = Ids++;
         /// <summary>
         /// The maximum number of network ticks a NetworkedVar can go without its value being sent out
         /// </summary>
@@ -28,14 +30,13 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         public readonly NetworkedVarSettings Settings = new NetworkedVarSettings();
         /// <summary>
-        /// Gets the last time the variable was synced (send)
+        /// The last time the variable was written to locally
         /// </summary>
-        public ushort SendTick { get; internal set; }
+        public ushort LocalTick { get; internal set; }
         /// <summary>
-        /// Gets the tick at which a variable was written to on the remote machine
-        /// This only gets set when the host receives th client netVar
+        /// The last time the variable was written to remotely. Uses the remote timescale
         /// </summary>
-        public ushort SrcTick { get; internal set; }
+        public ushort RemoteTick { get; internal set; }
         /// <summary>
         /// Delegate type for value changed event
         /// </summary>
@@ -103,9 +104,17 @@ namespace MLAPI.NetworkedVar
             {
                 if (!EqualityComparer<T>.Default.Equals(InternalValue, value))
                 {
+                    // Setter is assumed to be called locally, by game code.
+                    // When used by the host, it is its responsibility to set the RemoteTick
+                    RemoteTick = 0;
+
+                    FileLogger.Get().Log(myId + "] Setting " + value + " at tick " + NetworkedBehaviour.GetTick() + "(will be sent next tick)");
+                    FileLogger.Get().Log(myId + "] was " + InternalValue);
+
                     isDirty = true;
                     T previousValue = InternalValue;
                     InternalValue = value;
+
                     if (OnValueChanged != null)
                         OnValueChanged(previousValue, InternalValue);
                 }
@@ -117,13 +126,14 @@ namespace MLAPI.NetworkedVar
         {
             // since ResetDirty is called as part of PostNetworkVariableWrite
             // this is actually the tick the variable were written
-            SendTick = NetworkedBehaviour.GetTick();
+            //// LocalTick = NetworkedBehaviour.GetTick();
             isDirty = false;
         }
 
         /// <inheritdoc />
         public bool IsDirty()
         {
+            // todo: this must only be done on locally-written vars for which we didn't get an update
             // todo: this subtraction must be done modulo the wrapping window
             //if ((NetworkedBehaviour.GetTick() - SendTick) > k_maxTickUpdate)
             //{
@@ -184,9 +194,21 @@ namespace MLAPI.NetworkedVar
         /// </summary>
         /// <param name="stream">The stream to read the value from</param>
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
-        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort srcTick)
+        public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-            SrcTick = srcTick;
+//            // put those back later, when we get there
+//            if (localTick < LocalTick)
+//            {
+//                FileLogger.Get().Log("getting back " + localTick + ", when I'm at " + LocalTick);
+//                return;
+//            }
+//            else
+//            {
+                LocalTick = localTick;
+//            }
+
+            RemoteTick = remoteTick;
+
             using (PooledBitReader reader = PooledBitReader.Get(stream))
             {
                 T previousValue = InternalValue;
@@ -194,7 +216,7 @@ namespace MLAPI.NetworkedVar
 
                 if (keepDirtyDelta) isDirty = true;
 
-                string text = "Read var " + myIdForLogging + " is " + InternalValue + " srcTick " + SrcTick + " sendTick " + SendTick;
+                string text = "Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick;
                 text = text.Replace('(', ' ');
                 text = text.Replace(')', ' ');
                 text = text.Replace(',', ' ');
@@ -213,15 +235,17 @@ namespace MLAPI.NetworkedVar
         }
 
         /// <inheritdoc />
-        public void ReadField(Stream stream, ushort srcTick)
+        public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            SrcTick = srcTick;
-            ReadDelta(stream, false, srcTick);
+            // do we need this?
+            // LocalTick = tick;
+            ReadDelta(stream, false, localTick, remoteTick);
         }
 
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
+            LocalTick = NetworkedBehaviour.GetTick();
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
                 writer.WriteObjectPacked(InternalValue); //BOX

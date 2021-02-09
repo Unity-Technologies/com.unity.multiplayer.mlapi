@@ -554,12 +554,12 @@ namespace MLAPI
             }
         }
 
-        internal void SetNetworkedVarData(Stream stream, ushort srcTick)
+        internal void SetNetworkedVarData(Stream stream, ushort localTick, ushort remoteTick)
         {
             for (int i = 0; i < childNetworkedBehaviours.Count; i++)
             {
                 childNetworkedBehaviours[i].InitializeVars();
-                NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream, srcTick);
+                NetworkedBehaviour.SetNetworkedVarData(childNetworkedBehaviours[i].networkedVarFields, stream, localTick, remoteTick);
             }
         }
 

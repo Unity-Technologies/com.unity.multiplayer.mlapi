@@ -18,6 +18,8 @@ namespace MLAPI
 //        const float k_updateRate = 0.1f;
         const float k_epsilon = 0.001f;
 
+        private bool interpolate = false;
+
         // data structures for interpolation
         Vector3[] m_PosStore = new Vector3[2];
         Quaternion[] m_RotStore = new Quaternion[2];
@@ -91,13 +93,22 @@ namespace MLAPI
 //                {
 //                    m_lastSent += k_updateRate;
 
-                    m_varPos.Value = gameObject.transform.position;
-                    m_varRot.Value = gameObject.transform.rotation;
+                    //temporary debugging code
+                    if ((gameObject.transform.position - m_varPos.Value).x > 0.2 ||
+                        (gameObject.transform.position - m_varPos.Value).x < -0.2)
+                    {
+                        m_varPos.Value = gameObject.transform.position;
+                        m_varRot.Value = gameObject.transform.rotation;
+                    }
+
 //                }
             }
             else
             {
-                // todo: do we want to perform local interpolation on Update() instead?
+                if (!interpolate)
+                {
+                    return;
+                }
 
                 gameObject.transform.position = m_PosStore[1];
                 gameObject.transform.rotation = m_RotStore[1];
