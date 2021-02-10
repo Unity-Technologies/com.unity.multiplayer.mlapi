@@ -166,7 +166,18 @@ namespace MLAPI.NetworkedVar
         /// Writes the variable to the writer
         /// </summary>
         /// <param name="stream">The stream to write the value to</param>
-        public void WriteDelta(Stream stream) => WriteField(stream); //The NetworkedVar is built for simple data types and has no delta.
+        public void WriteDelta(Stream stream)
+        {
+            using (PooledBitWriter writer = PooledBitWriter.Get(stream))
+            {
+                // write the network tick at which this NetworkedVar was modified remotely
+                // this will allow lag-compensation
+                // todo: this is currently only done on delta updates. Consider whether it should be done in WriteField
+                writer.WriteUInt16Packed(RemoteTick);
+            }
+
+            WriteField(stream);
+        }
 
         /// <inheritdoc />
         public bool CanClientWrite(ulong clientId)

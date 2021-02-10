@@ -48,18 +48,21 @@ namespace MLAPI.NetworkedVar
         /// Reads the complete state from the reader and applies it
         /// </summary>
         /// <param name="stream">The stream to read the state from</param>
+        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
+        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         void ReadField(Stream stream, ushort localTick, ushort remoteTick);
         /// <summary>
         /// Reads delta from the reader and applies them to the internal value
         /// </summary>
         /// <param name="stream">The stream to read the delta from</param>
         /// <param name="keepDirtyDelta">Whether or not the delta should be kept as dirty or consumed</param>
+        /// <param name="localTick">The local network tick at which this var was written, on the machine it was written </param>
+        /// <param name="remoteTick">The remote network tick at which this var was sent by the host </param>
         void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick);
         /// <summary>
         /// Sets NetworkedBehaviour the container belongs to.
         /// </summary>
         /// <param name="behaviour">The behaviour the container behaves to</param>
         void SetNetworkedBehaviour(NetworkedBehaviour behaviour);
-        public ushort RemoteTick { get; }
     }
 }

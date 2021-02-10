@@ -687,9 +687,6 @@ namespace MLAPI
                             if (shouldWrite)
                             {
                                 writtenAny = true;
-                                // write the network tick at which this NetworkedVar was modified remotely
-                                // will allow lag-compensation
-                                writer.WriteUInt16Packed(networkedVarFields[k].RemoteTick);
 
                                 if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                                 {
