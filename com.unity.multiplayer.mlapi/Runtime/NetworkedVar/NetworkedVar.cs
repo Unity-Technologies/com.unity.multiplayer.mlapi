@@ -133,12 +133,6 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public bool IsDirty()
         {
-            // todo: this must only be done on locally-written vars for which we didn't get an update
-            // todo: this subtraction must be done modulo the wrapping window
-            //if ((NetworkedBehaviour.GetTick() - SendTick) > k_maxTickUpdate)
-            //{
-                //return true;
-            //}
             return isDirty;
         }
 
@@ -207,17 +201,9 @@ namespace MLAPI.NetworkedVar
         /// <param name="keepDirtyDelta">Whether or not the container should keep the dirty delta, or mark the delta as consumed</param>
         public void ReadDelta(Stream stream, bool keepDirtyDelta, ushort localTick, ushort remoteTick)
         {
-//            // put those back later, when we get there
-//            if (localTick < LocalTick)
-//            {
-//                FileLogger.Get().Log("getting back " + localTick + ", when I'm at " + LocalTick);
-//                return;
-//            }
-//            else
-//            {
-                LocalTick = localTick;
-//            }
-
+            // todo: This allows the host-returned value to be set back to an old value
+            // this will need to be adjusted to check if we're have a most recent value
+            LocalTick = localTick;
             RemoteTick = remoteTick;
 
             using (PooledBitReader reader = PooledBitReader.Get(stream))
@@ -227,12 +213,7 @@ namespace MLAPI.NetworkedVar
 
                 if (keepDirtyDelta) isDirty = true;
 
-                string text = "Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick;
-                text = text.Replace('(', ' ');
-                text = text.Replace(')', ' ');
-                text = text.Replace(',', ' ');
-
-                FileLogger.Get().Log(text);
+                FileLogger.Get().Log("Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick);
 
                 if (OnValueChanged != null)
                     OnValueChanged(previousValue, InternalValue);
@@ -248,14 +229,13 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public void ReadField(Stream stream, ushort localTick, ushort remoteTick)
         {
-            // do we need this?
-            // LocalTick = tick;
             ReadDelta(stream, false, localTick, remoteTick);
         }
 
         /// <inheritdoc />
         public void WriteField(Stream stream)
         {
+            // Store the local tick at which this NetworkedVar was modified
             LocalTick = NetworkedBehaviour.GetTick();
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
