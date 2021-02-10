@@ -542,7 +542,6 @@ namespace MLAPI.NetworkedVar.Collections
                 dirtyEvents.Add(dictionaryEvent);
             }
         }
-        public ushort RemoteTick { get; }
     }
 
     /// <summary>
