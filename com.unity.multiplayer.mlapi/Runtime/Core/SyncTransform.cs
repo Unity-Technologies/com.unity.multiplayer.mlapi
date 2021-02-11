@@ -18,7 +18,7 @@ namespace MLAPI
 //        const float k_updateRate = 0.1f;
         const float k_epsilon = 0.001f;
 
-        private bool interpolate = false;
+        private bool interpolate = true;
 
         // data structures for interpolation
         Vector3[] m_PosStore = new Vector3[2];
@@ -89,19 +89,8 @@ namespace MLAPI
             // if this.gameObject is local let's send its position
             if (IsLocalPlayer)
             {
-//                while ((now - m_lastSent) > k_updateRate)
-//                {
-//                    m_lastSent += k_updateRate;
-
-                    //temporary debugging code
-                    if ((gameObject.transform.position - m_varPos.Value).x > 0.2 ||
-                        (gameObject.transform.position - m_varPos.Value).x < -0.2)
-                    {
-                        m_varPos.Value = gameObject.transform.position;
-                        m_varRot.Value = gameObject.transform.rotation;
-                    }
-
-//                }
+                m_varPos.Value = gameObject.transform.position;
+                m_varRot.Value = gameObject.transform.rotation;
             }
             else
             {
@@ -110,30 +99,37 @@ namespace MLAPI
                     return;
                 }
 
-                gameObject.transform.position = m_PosStore[1];
-                gameObject.transform.rotation = m_RotStore[1];
+                // don't interpolate more than 1 tick forward
+                if ((now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]) < 2.0)
+                {
+                    // let's interpolate the last received transform
+                    if (m_PosTimes[0] >= 0.0 && m_PosTimes[1] >= 0.0)
+                    {
+                        if (m_PosTimes[1] - m_PosTimes[0] > k_epsilon)
+                        {
+                            gameObject.transform.position = Vector3.LerpUnclamped(
+                                m_PosStore[0],
+                                m_PosStore[1],
+                                (now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
+                        }
+                    }
+                    if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
+                    {
+                        if (m_RotTimes[1] - m_RotTimes[0] > k_epsilon)
+                        {
+                            gameObject.transform.rotation = Quaternion.SlerpUnclamped(
+                                m_RotStore[0],
+                                m_RotStore[1],
+                                (now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
+                        }
+                    }
+                }
+                else
+                {
+                    gameObject.transform.position = m_PosStore[1];
+                    gameObject.transform.rotation = m_RotStore[1];
+                }
 
-                // let's interpolate the last received transform
-                if (m_PosTimes[0] >= 0.0 && m_PosTimes[1] >= 0.0)
-                {
-                    if (m_PosTimes[1] - m_PosTimes[0] > k_epsilon)
-                    {
-                        gameObject.transform.position = Vector3.LerpUnclamped(
-                            m_PosStore[0],
-                            m_PosStore[1],
-                            (now - m_PosTimes[0]) / (m_PosTimes[1] - m_PosTimes[0]));
-                    }
-                }
-                if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
-                {
-                    if (m_RotTimes[1] - m_RotTimes[0] > k_epsilon)
-                    {
-                        gameObject.transform.rotation = Quaternion.SlerpUnclamped(
-                            m_RotStore[0],
-                            m_RotStore[1],
-                            (now - m_RotTimes[0]) / (m_RotTimes[1] - m_RotTimes[0]));
-                    }
-                }
             }
         }
     }
