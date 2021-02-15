@@ -27,6 +27,12 @@ namespace MLAPI
     /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
+        // todo: this might belong in the tick system, in the end
+        // special value to indicate "No tick information"
+        private const ushort k_NoTick = 65535;
+        // Number of ticks over which the tick number wraps back to 0
+        private const ushort k_TickPeriod = 65000;
+
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -369,7 +375,7 @@ namespace MLAPI
         /// Stores the network tick at the NetworkedBehaviourUpdate time
         /// This allows sending NetworkedVars not more often than once per network tick, regardless of the update rate
         /// </summary>
-        static ushort currentTick = 0;
+        static ushort currentTick = k_NoTick;
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
         /// </summary>
@@ -628,7 +634,7 @@ namespace MLAPI
         // todo: This is temporary, to be replaced by the tick system
         public static ushort GetTick()
         {
-            return (ushort)(Time.time / 0.1);
+            return (ushort)(((long)(Time.time / 0.1)) % k_TickPeriod);
         }
 
         private void NetworkedVarUpdate(ulong clientId)
@@ -864,7 +870,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream, 0, 0);
+                    networkedVarList[i].ReadField(stream, k_NoTick, k_NoTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
