@@ -14,13 +14,6 @@ namespace MLAPI.NetworkedVar
     [Serializable]
     public class NetworkedVar<T> : INetworkedVar
     {
-        static int Ids = 0;
-        private int myId = Ids++;
-        /// <summary>
-        /// The maximum number of network ticks a NetworkedVar can go without its value being sent out
-        /// </summary>
-        private ushort k_maxTickUpdate = 20;
-
         /// <summary>
         /// Gets or sets Whether or not the variable needs to be delta synced
         /// </summary>
@@ -49,15 +42,12 @@ namespace MLAPI.NetworkedVar
         public OnValueChangedDelegate OnValueChanged;
         private NetworkedBehaviour networkedBehaviour;
 
-        private static int allIdsForLogging = 0;
-        public int myIdForLogging = 0;
         /// <summary>
         /// Creates a NetworkedVar with the default value and settings
         /// </summary>
         public NetworkedVar()
         {
-            myIdForLogging = allIdsForLogging;
-            allIdsForLogging += 1;
+
         }
 
         /// <summary>
@@ -108,13 +98,9 @@ namespace MLAPI.NetworkedVar
                     // When used by the host, it is its responsibility to set the RemoteTick
                     RemoteTick = 0;
 
-                    FileLogger.Instance.Log(myId + "] Setting " + value + " at tick " + NetworkedBehaviour.GetTick() + "(will be sent next tick)");
-                    FileLogger.Instance.Log(myId + "] was " + InternalValue);
-
                     isDirty = true;
                     T previousValue = InternalValue;
                     InternalValue = value;
-
                     if (OnValueChanged != null)
                         OnValueChanged(previousValue, InternalValue);
                 }
@@ -124,9 +110,6 @@ namespace MLAPI.NetworkedVar
         /// <inheritdoc />
         public void ResetDirty()
         {
-            // since ResetDirty is called as part of PostNetworkVariableWrite
-            // this is actually the tick the variable were written
-            //// LocalTick = NetworkedBehaviour.GetTick();
             isDirty = false;
         }
 
@@ -212,8 +195,6 @@ namespace MLAPI.NetworkedVar
                 InternalValue = (T)reader.ReadObjectPacked((typeof(T)));
 
                 if (keepDirtyDelta) isDirty = true;
-
-                FileLogger.Instance.Log("Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick);
 
                 if (OnValueChanged != null)
                     OnValueChanged(previousValue, InternalValue);
