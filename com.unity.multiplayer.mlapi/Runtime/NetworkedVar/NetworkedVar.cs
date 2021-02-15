@@ -108,8 +108,8 @@ namespace MLAPI.NetworkedVar
                     // When used by the host, it is its responsibility to set the RemoteTick
                     RemoteTick = 0;
 
-                    FileLogger.Get().Log(myId + "] Setting " + value + " at tick " + NetworkedBehaviour.GetTick() + "(will be sent next tick)");
-                    FileLogger.Get().Log(myId + "] was " + InternalValue);
+                    FileLogger.Instance.Log(myId + "] Setting " + value + " at tick " + NetworkedBehaviour.GetTick() + "(will be sent next tick)");
+                    FileLogger.Instance.Log(myId + "] was " + InternalValue);
 
                     isDirty = true;
                     T previousValue = InternalValue;
@@ -213,7 +213,7 @@ namespace MLAPI.NetworkedVar
 
                 if (keepDirtyDelta) isDirty = true;
 
-                FileLogger.Get().Log("Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick);
+                FileLogger.Instance.Log("Read var " + myIdForLogging + " is " + InternalValue + " LocalTick " + LocalTick + " RemoteTick " + RemoteTick);
 
                 if (OnValueChanged != null)
                     OnValueChanged(previousValue, InternalValue);
