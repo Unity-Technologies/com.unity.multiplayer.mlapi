@@ -217,7 +217,7 @@ namespace MLAPI.NetworkedVar
         public void WriteField(Stream stream)
         {
             // Store the local tick at which this NetworkedVar was modified
-            LocalTick = NetworkedBehaviour.GetTick();
+            LocalTick = NetworkedBehaviour.currentTick;
             using (PooledBitWriter writer = PooledBitWriter.Get(stream))
             {
                 writer.WriteObjectPacked(InternalValue); //BOX

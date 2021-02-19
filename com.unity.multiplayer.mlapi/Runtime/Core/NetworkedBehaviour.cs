@@ -375,7 +375,7 @@ namespace MLAPI
         /// Stores the network tick at the NetworkedBehaviourUpdate time
         /// This allows sending NetworkedVars not more often than once per network tick, regardless of the update rate
         /// </summary>
-        static ushort currentTick = k_NoTick;
+        public static ushort currentTick { get; private set; }
         /// <summary>
         /// Gets called when message handlers are ready to be registered and the networking is setup
         /// </summary>
@@ -632,9 +632,9 @@ namespace MLAPI
         private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
 
         // todo: This is temporary, to be replaced by the tick system
-        public static ushort GetTick()
+        private static ushort GetTick()
         {
-            return (ushort)(((long)(Time.time / 0.1)) % k_TickPeriod);
+            return (ushort)(((long)(Time.time / 0.050)) % k_TickPeriod);
         }
 
         private void NetworkedVarUpdate(ulong clientId)
