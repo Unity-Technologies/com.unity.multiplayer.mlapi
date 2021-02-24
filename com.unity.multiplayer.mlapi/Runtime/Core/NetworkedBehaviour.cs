@@ -22,17 +22,26 @@ using Unity.Profiling;
 
 namespace MLAPI
 {
+    // todo: This is temporary, to be replaced by the tick system
+    static class TickSystem
+    {
+        // todo: this might belong in the tick system, in the end
+        // special value to indicate "No tick information"
+        public const ushort k_NoTick = 65535;
+        // Number of ticks over which the tick number wraps back to 0
+        public const ushort k_TickPeriod = 65000;
+
+        public static ushort GetTick()
+        {
+            return (ushort)(((long)(Time.time / 0.050)) % k_TickPeriod);
+        }
+    }
+
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour
     /// </summary>
     public abstract class NetworkedBehaviour : MonoBehaviour
     {
-        // todo: this might belong in the tick system, in the end
-        // special value to indicate "No tick information"
-        private const ushort k_NoTick = 65535;
-        // Number of ticks over which the tick number wraps back to 0
-        private const ushort k_TickPeriod = 65000;
-
         [Browsable(false)]
         [EditorBrowsable(EditorBrowsableState.Never)]
 #if UNITY_2020_2_OR_NEWER
@@ -533,7 +542,7 @@ namespace MLAPI
         internal static void NetworkedBehaviourUpdate()
         {
             // Don't NetworkedBehaviourUpdate more than once per network tick
-            ushort tick = GetTick();
+            ushort tick = TickSystem.GetTick();
             if (tick == currentTick)
             {
                 return;
@@ -630,12 +639,6 @@ namespace MLAPI
 
         private readonly List<int> networkedVarIndexesToReset = new List<int>();
         private readonly HashSet<int> networkedVarIndexesToResetSet = new HashSet<int>();
-
-        // todo: This is temporary, to be replaced by the tick system
-        private static ushort GetTick()
-        {
-            return (ushort)(((long)(Time.time / 0.050)) % k_TickPeriod);
-        }
 
         private void NetworkedVarUpdate(ulong clientId)
         {
@@ -870,7 +873,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream, k_NoTick, k_NoTick);
+                    networkedVarList[i].ReadField(stream, TickSystem.k_NoTick, TickSystem.k_NoTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
