@@ -27,9 +27,9 @@ namespace MLAPI
     {
         // todo: this might belong in the tick system, in the end
         // special value to indicate "No tick information"
-        public const ushort k_NoTick = 65535;
+        public const ushort k_NoTick = ushort.MaxValue;
         // Number of ticks over which the tick number wraps back to 0
-        public const ushort k_TickPeriod = 65000;
+        public const ushort k_TickPeriod = k_NoTick - 1;
 
         public static ushort GetTick()
         {
@@ -970,7 +970,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[j].ReadField(stream, 0, 0);
+                    networkedVarList[j].ReadField(stream, TickSystem.k_NoTick, TickSystem.k_NoTick);
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
