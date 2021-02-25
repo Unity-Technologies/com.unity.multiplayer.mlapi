@@ -1,4 +1,3 @@
-using MLAPI.Logging;
 using MLAPI.NetworkedVar;
 using UnityEngine;
 
@@ -50,7 +49,6 @@ namespace MLAPI
                 {
                     gameObject.transform.position = after;
                 }
-                //Debug.Log("[1] received position from " + before + " to " + after);
             }
         }
 
@@ -68,7 +66,6 @@ namespace MLAPI
                 {
                     gameObject.transform.rotation = after;
                 }
-                //Debug.Log("[2] received rotation from " + before + " to " + after);
             }
         }
 
@@ -118,10 +115,6 @@ namespace MLAPI
                     {
                         gameObject.transform.position = m_PosStore[1];
                     }
-
-                    var after = gameObject.transform.position;
-
-                    //Debug.Log("[3] Updated position from " + before + " to " + after);
                 }
 
                 if (m_RotTimes[0] >= 0.0 && m_RotTimes[1] >= 0.0)
@@ -142,10 +135,6 @@ namespace MLAPI
                     {
                         gameObject.transform.rotation = m_RotStore[1];
                     }
-
-                    var after = gameObject.transform.rotation;
-
-                    //Debug.Log("[4] Updated rotation from " + before + " to " + after);
                 }
             }
         }
