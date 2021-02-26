@@ -22,21 +22,6 @@ using Unity.Profiling;
 
 namespace MLAPI
 {
-    // todo: This is temporary, to be replaced by the tick system
-    static class TickSystem
-    {
-        // todo: this might belong in the tick system, in the end
-        // special value to indicate "No tick information"
-        public const ushort k_NoTick = ushort.MaxValue;
-        // Number of ticks over which the tick number wraps back to 0
-        public const ushort k_TickPeriod = k_NoTick - 1;
-
-        public static ushort GetTick()
-        {
-            return (ushort)(((long)(Time.time / 0.050)) % k_TickPeriod);
-        }
-    }
-
     /// <summary>
     /// The base class to override to write networked code. Inherits MonoBehaviour
     /// </summary>
@@ -542,7 +527,7 @@ namespace MLAPI
         internal static void NetworkedBehaviourUpdate()
         {
             // Don't NetworkedBehaviourUpdate more than once per network tick
-            ushort tick = TickSystem.GetTick();
+            ushort tick = NetworkTickSystem.Instance.GetTick();
             if (tick == currentTick)
             {
                 return;
@@ -873,7 +858,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[i].ReadField(stream, TickSystem.k_NoTick, TickSystem.k_NoTick);
+                    networkedVarList[i].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
                     ProfilerStatManager.networkVarsRcvd.Record();
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
@@ -970,7 +955,7 @@ namespace MLAPI
 
                     long readStartPos = stream.Position;
 
-                    networkedVarList[j].ReadField(stream, TickSystem.k_NoTick, TickSystem.k_NoTick);
+                    networkedVarList[j].ReadField(stream, NetworkTickSystem.k_NoTick, NetworkTickSystem.k_NoTick);
 
                     if (NetworkingManager.Singleton.NetworkConfig.EnsureNetworkedVarLengthSafety)
                     {
