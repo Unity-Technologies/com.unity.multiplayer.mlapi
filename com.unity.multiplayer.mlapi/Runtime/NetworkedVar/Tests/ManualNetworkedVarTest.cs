@@ -49,7 +49,7 @@ namespace MLAPI
             {
                 // compute the delta in tick between client and server,
                 // as seen from the client, when it receives a value not from itself
-                if (m_TestVar.LocalTick != TickSystem.k_NoTick)
+                if (m_TestVar.LocalTick != NetworkTickSystem.k_NoTick)
                 {
                     int delta = m_TestVar.LocalTick - m_TestVar.RemoteTick;
                     m_Count++;
@@ -84,7 +84,7 @@ namespace MLAPI
 
             if (m_Count == m_EndIterations)
             {
-                if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 2)
+                if (m_Problems == "" && Math.Abs(m_MaxDelta - m_MinDelta) < 3)
                 {
                     Debug.Log("**** TEST PASSED ****");
                 }
