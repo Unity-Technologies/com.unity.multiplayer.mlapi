@@ -75,6 +75,9 @@ namespace MLAPI.Profiling
 
         private static void OnPerformanceTickData(PerformanceTickData tickData)
         {
+            if(tickData == null)
+                return;
+
             // Operations
             k_ConnectionsCounterValue.Value = tickData.GetData(ProfilerConstants.NumberOfConnections);
             k_TickRateCounterValue.Value = tickData.GetData(ProfilerConstants.ReceiveTickRate);
