@@ -643,11 +643,7 @@ namespace MLAPI
 
         private void OnNetworkEarlyUpdate()
         {
-            PerformanceDataManager.BeginNewTick();
-            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
-            {
-                profileTransport.BeginNewTick();
-            }
+            ProfilerBeginTick();
 
             if (IsListening)
             {
@@ -751,18 +747,7 @@ namespace MLAPI
                 }
             }
 
-            var data = PerformanceDataManager.GetData();
-            var eventHandler = OnPerformanceDataEvent;
-            if (eventHandler != null && data!= null)
-            {
-                if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
-                {
-                    var transportProfilerData = profileTransport.GetTransportProfilerData();
-                    PerformanceDataManager.AddTransportData(transportProfilerData);
-                }
-
-                eventHandler?.Invoke(data);
-            }
+            NotifyProfilerListeners();
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
@@ -1489,6 +1474,35 @@ namespace MLAPI
                 }
 
                 NetworkConfig.NetworkTransport.DisconnectRemoteClient(clientId);
+            }
+        }
+
+        private void ProfilerBeginTick()
+        {
+            PerformanceDataManager.BeginNewTick();
+            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+            {
+                profileTransport.BeginNewTick();
+            }
+        }
+
+        private void NotifyProfilerListeners()
+        {
+            var data = PerformanceDataManager.GetData();
+            var eventHandler = OnPerformanceDataEvent;
+            if (eventHandler != null && data != null)
+            {
+                if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+                {
+                    var transportProfilerData = profileTransport.GetTransportProfilerData();
+                    PerformanceDataManager.AddTransportData(transportProfilerData);
+                }
+
+                eventHandler.Invoke(data);
+            }
+            else if (data == null)
+            {
+                NetworkLog.LogWarning("No data available. Did you forget to call PerformanceDataManager.BeginNewTick() first?");
             }
         }
     }
