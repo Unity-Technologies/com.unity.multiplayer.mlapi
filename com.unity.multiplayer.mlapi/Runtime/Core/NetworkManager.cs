@@ -751,13 +751,18 @@ namespace MLAPI
                 }
             }
 
-            if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+            var data = PerformanceDataManager.GetData();
+            var eventHandler = OnPerformanceDataEvent;
+            if (eventHandler != null && data!= null)
             {
-                var transportProfilerData = profileTransport.GetTransportProfilerData();
-                PerformanceDataManager.AddTransportData(transportProfilerData);
-            }
+                if (NetworkConfig.NetworkTransport is ITransportProfilerData profileTransport)
+                {
+                    var transportProfilerData = profileTransport.GetTransportProfilerData();
+                    PerformanceDataManager.AddTransportData(transportProfilerData);
+                }
 
-            OnPerformanceDataEvent?.Invoke(PerformanceDataManager.GetData());
+                eventHandler?.Invoke(data);
+            }
         }
 
         internal void UpdateNetworkTime(ulong clientId, float netTime, float receiveTime, bool warp = false)
